@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interpretation Order Management Timeline - Complete</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .timeline-container {
+            position: relative;
+            padding: 20px 0;
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+
+        .timeline {
+            position: relative;
+            min-height: 750px;
+            width: max-content;
+            margin: 0 auto;
+        }
+
+        .timeline-line {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+
+        .week-marker {
+            position: absolute;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 2;
+        }
+
+        .week-marker .week-label {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            position: relative;
+            top: -10px;
+        }
+
+        .week-marker.target-week .week-label {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            font-size: 1.1em;
+            padding: 10px 20px;
+            box-shadow: 0 4px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .week-marker.pcy-start .week-label {
+            background: linear-gradient(135deg, #00b4d8, #0077b6);
+            font-size: 0.95em;
+        }
+
+        .activity-card {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            min-width: 168px;
+            max-width: 200px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 3;
+            border-left: 3px solid #ddd;
+        }
+
+        .activity-card.gsc-action {
+            border-left-color: #1976d2;
+        }
+
+        .activity-card.scic-action {
+            border-left-color: #c2185b;
+        }
+
+        .activity-card.joint-action {
+            border-left-color: #7b1fa2;
+        }
+
+        .activity-card.pcy-action {
+            border-left-color: #00b4d8;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-50px) scale(1.15);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+            z-index: 100;
+            background: linear-gradient(to bottom, #ffffff, #f8f9ff);
+        }
+        
+        .activity-card:hover::before {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 50px;
+            background: linear-gradient(to bottom, rgba(102, 126, 234, 0.3), transparent);
+        }
+
+        .activity-card .step-number {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #667eea;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+
+        .activity-card .title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 6px;
+            font-size: 0.85em;
+            line-height: 1.2;
+        }
+
+        .activity-card .description {
+            color: #666;
+            font-size: 0.75em;
+            line-height: 1.3;
+            margin-bottom: 6px;
+        }
+
+        .activity-card .timing {
+            color: #ff4444;
+            font-size: 0.7em;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        .activity-card .actors {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .actor-tag {
+            background: #f0f0f0;
+            color: #555;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7em;
+        }
+
+        .actor-tag.gsc {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .actor-tag.scic {
+            background: #fce4ec;
+            color: #c2185b;
+        }
+
+        .actor-tag.system {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .actor-tag.pcy {
+            background: #e0f7fa;
+            color: #00838f;
+        }
+
+        .deadline-marker {
+            position: absolute;
+            width: 2px;
+            height: 40px;
+            background: #ff4444;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .deadline-label {
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4444;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            white-space: nowrap;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .legend-line {
+            width: 30px;
+            height: 3px;
+        }
+
+        .phase-separator {
+            position: absolute;
+            width: 1px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.1);
+            top: 0;
+            z-index: 1;
+        }
+
+        .phase-label {
+            position: absolute;
+            top: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .info-box h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #856404;
+        }
+
+        .daily-operations {
+            background: #e8f5e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .daily-operations h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+        }
+
+        .daily-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #4caf50;
+        }
+
+        .process-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-top: 20px;
+        }
+
+        table thead tr {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        table th, table td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        table tbody tr {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        table tbody tr:nth-child(even) {
+            background: #f8f9ff;
+        }
+
+        @media (max-width: 768px) {
+            .activity-card {
+                min-width: 120px;
+                max-width: 140px;
+                padding: 8px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Interpretation Order Management Timeline - Complete</h1>
+        <p class="subtitle">Complete workflow showing GSC and SCIC interactions throughout the order lifecycle</p>
+        
+        <div class="timeline-container">
+            <div class="timeline" style="width: 4200px;">
+                <div class="timeline-line"></div>
+                
+                <!-- Week Markers -->
+                <div class="week-marker pcy-start" style="left: 50px;">
+                    <div class="week-label">PCY-8 weeks</div>
+                </div>
+                
+                <div class="week-marker" style="left: 250px;">
+                    <div class="week-label">Week X-9</div>
+                </div>
+                
+                <div class="week-marker" style="left: 600px;">
+                    <div class="week-label">Week X-8</div>
+                </div>
+                
+                <div class="week-marker" style="left: 1200px;">
+                    <div class="week-label">Week X-4</div>
+                </div>
+                
+                <div class="week-marker" style="left: 1700px;">
+                    <div class="week-label">Week X-3</div>
+                </div>
+                
+                <div class="week-marker" style="left: 2100px;">
+                    <div class="week-label">Week X-2</div>
+                </div>
+                
+                <div class="week-marker" style="left: 2500px;">
+                    <div class="week-label">Week X-1</div>
+                </div>
+                
+                <div class="week-marker target-week" style="left: 2900px;">
+                    <div class="week-label">WEEK X</div>
+                </div>
+                
+                <div class="week-marker" style="left: 3300px;">
+                    <div class="week-label">Week X+1</div>
+                </div>
+                
+                <div class="week-marker" style="left: 3700px;">
+                    <div class="week-label">Week X+2</div>
+                </div>
+                
+                <!-- Phase Separators -->
+                <div class="phase-separator" style="left: 150px;">
+                    <div class="phase-label">Pre-Planning</div>
+                </div>
+                
+                <div class="phase-separator" style="left: 450px;">
+                    <div class="phase-label">Planning Phase</div>
+                </div>
+                
+                <div class="phase-separator" style="left: 1500px;">
+                    <div class="phase-label">Modification Phase</div>
+                </div>
+                
+                <div class="phase-separator" style="left: 2700px;">
+                    <div class="phase-label">Execution Phase</div>
+                </div>
+                
+                <div class="phase-separator" style="left: 3500px;">
+                    <div class="phase-label">Closure Phase</div>
+                </div>
+                
+                <!-- PCY On-Request Setup -->
+                <div class="activity-card pcy-action" style="left: 30px; top: 8%;">
+                    <div class="step-number">PCY</div>
+                    <div class="title">Define On-Request Languages</div>
+                    <div class="description">PCY defines language choices & estimated meetings for CPBs at least 8 weeks before PCY starts</div>
+                    <div class="actors">
+                        <span class="actor-tag pcy">Presidency</span>
+                    </div>
+                </div>
+                
+                <!-- Step 1: Initial Discussion -->
+                <div class="activity-card joint-action" style="left: 180px; top: 28%;">
+                    <div class="step-number">1</div>
+                    <div class="title">8-Week Planning Meeting</div>
+                    <div class="description">GSC and SCIC discuss week X requirements</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">GSC</span>
+                        <span class="actor-tag scic">SCIC</span>
+                    </div>
+                </div>
+                
+                <div class="deadline-marker" style="left: 250px;">
+                    <div class="deadline-label">Wednesday</div>
+                </div>
+                
+                <!-- Step 2: GSC Creates Orders -->
+                <div class="activity-card gsc-action" style="left: 330px; bottom: 10%;">
+                    <div class="step-number">2</div>
+                    <div class="title">Create Bulk or Individual Orders</div>
+                    <div class="description">Meeting Planner creates interpretation orders for all week X sessions. Individual orders with a defined SCIC reaction deadline apply to urgent situations or to changes scheduled at any time outside 8-week planning period.</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">Meeting Planner</span>
+                        <span class="actor-tag system">POMME</span>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Define Requirements -->
+                <div class="activity-card gsc-action" style="left: 480px; top: 15%;">
+                    <div class="step-number">3</div>
+                    <div class="title">Define Language Regime</div>
+                    <div class="description">Specify requested languages (active/passive)</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">GSC</span>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Send to SCIC -->
+                <div class="activity-card gsc-action" style="left: 630px; bottom: 30%;">
+                    <div class="step-number">4</div>
+                    <div class="title">Send Orders to SCIC</div>
+                    <div class="description">Transmit interpretation orders via system</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">GSC</span>
+                        <span class="actor-tag system">POMME</span>
+                    </div>
+                </div>
+                
+                <!-- Step 5: SCIC Receives -->
+                <div class="activity-card scic-action" style="left: 780px; top: 30%;">
+                    <div class="step-number">5</div>
+                    <div class="title">Receive Orders</div>
+                    <div class="description">SCIC receives and logs interpretation requests</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC Officer</span>
+                        <span class="actor-tag system">PEARL</span>
+                    </div>
+                </div>
+                
+                <!-- Step 6: Feasibility Check -->
+                <div class="activity-card scic-action" style="left: 930px; bottom: 25%;">
+                    <div class="step-number">6</div>
+                    <div class="title">Check Feasibility</div>
+                    <div class="description">Verify interpreter availability and language coverage</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC Officer</span>
+                    </div>
+                </div>
+                
+                <!-- Step 7: Check Compatibility -->
+                <div class="activity-card scic-action" style="left: 1080px; top: 10%;">
+                    <div class="step-number">7</div>
+                    <div class="title">Session Compatibility</div>
+                    <div class="description">Ensure no scheduling conflicts. Check SLA compliance</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC</span>
+                        <span class="actor-tag system">PEARL</span>
+                    </div>
+                </div>
+                
+                <!-- Step 8: Define Provided Regime -->
+                <div class="activity-card scic-action" style="left: 1230px; bottom: 28%;">
+                    <div class="step-number">8</div>
+                    <div class="title">Define Provided Regime</div>
+                    <div class="description">Determine actual languages SCIC can provide</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC</span>
+                    </div>
+                </div>
+                
+                <!-- Step 9: Accept/Reject/Expire Decision -->
+                <div class="activity-card scic-action" style="left: 1380px; top: 10%;">
+                    <div class="step-number">9</div>
+                    <div class="title">Decision: Full Accept/Accept(priority only)/Reject/Expire</div>
+                    <div class="description">Decide on each interpretation order for week X. If no reply by the GSC deadline, it expires unless extended by GSC. If Accepted, available languages are sent immediately or later to GSC.(CPB meetings: Priority languages immediately, full regime later. Other meetings: All languages immediately)</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC Officer</span>
+                    </div>
+                </div>
+                
+                <!-- Step 10: Send Feedback -->
+                <div class="activity-card scic-action" style="left: 1530px; bottom: 5%;">
+                    <div class="step-number">10</div>
+                    <div class="title">Send Feedback</div>
+                    <div class="description">Communicate acceptance/rejection to GSC in bulk for all sessions in week X. Rejection justification by SCIC is optional</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC</span>
+                    </div>
+                </div>
+                
+                <!-- Free Cancellation Deadline -->
+                <div class="deadline-marker" style="left: 1700px;">
+                    <div class="deadline-label">Friday 13:00 (X-3)</div>
+                </div>
+                
+                <!-- Step 11: GSC Acknowledges -->
+                <div class="activity-card gsc-action" style="left: 1650px; top: 25%;">
+                    <div class="step-number">11</div>
+                    <div class="title">Acknowledge Feedback</div>
+                    <div class="description">GSC confirms receipt of SCIC decision</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">Meeting Planner</span>
+                        <span class="actor-tag system">POMME</span>
+                    </div>
+                </div>
+                
+                <!-- Step 12: Language Changes -->
+                <div class="activity-card gsc-action" style="left: 1800px; bottom: 30%;">
+                    <div class="step-number">12</div>
+                    <div class="title">Request Language Changes</div>
+                    <div class="description">Add/remove languages as needs change</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">Meeting Planner</span>
+                    </div>
+                </div>
+                
+                <!-- Step 13: SCIC Checks Changes -->
+                <div class="activity-card scic-action" style="left: 1950px; top: 18%;">
+                    <div class="step-number">13</div>
+                    <div class="title">Validate Changes</div>
+                    <div class="description">Check feasibility of language modifications</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC</span>
+                    </div>
+                </div>
+                
+                <!-- SLA Deadline -->
+                <div class="deadline-marker" style="left: 2100px;">
+                    <div class="deadline-label">SLA Deadline</div>
+                </div>
+                
+                <!-- Step 14: Cancellations After SLA -->
+                <div class="activity-card gsc-action" style="left: 2150px; bottom: 25%;">
+                    <div class="step-number">14</div>
+                    <div class="title">Cancel (With Cost)</div>
+                    <div class="description">Late cancellations incur charges. GSC may justify delay, if SCIC accepts, cancellation is cost-free</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">GSC</span>
+                    </div>
+                </div>
+                
+                <!-- Step 15: Assign Interpreters -->
+                <div class="activity-card scic-action" style="left: 2300px; top: 15%;">
+                    <div class="step-number">15</div>
+                    <div class="title">Assign Interpreters</div>
+                    <div class="description">SCIC assigns specific interpreters to sessions</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC Officer</span>
+                    </div>
+                </div>
+                
+                <!-- Thursday Deadline -->
+                <div class="deadline-marker" style="left: 2450px;">
+                    <div class="deadline-label">Thursday 12:00</div>
+                </div>
+                
+                <div class="activity-card gsc-action" style="left: 2400px; bottom: 15%;">
+                    <div class="step-number">16</div>
+                    <div class="title">Final Changes Deadline</div>
+                    <div class="description">Last cancellations/replacements with cost</div>
+                    <div class="timing">Thursday 12:00 (Week X-1)</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">Meeting Planner</span>
+                    </div>
+                </div>
+                
+                <!-- Friday Deadline -->
+                <div class="deadline-marker" style="left: 2550px;">
+                    <div class="deadline-label">Friday 17:00</div>
+                </div>
+                
+                <!-- Step 17: Send Names -->
+                <div class="activity-card scic-action" style="left: 2550px; top: 20%;">
+                    <div class="step-number">17</div>
+                    <div class="title">Send Interpreter Names</div>
+                    <div class="description">Bulk send interpreter assignments for week X</div>
+                    <div class="timing">Not Exact Date/Time defined</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC</span>
+                        <span class="actor-tag system">PEARL</span>
+                    </div>
+                </div>
+                
+                <!-- Step 18: GSC Acknowledges Names -->
+                <div class="activity-card gsc-action" style="left: 2650px; bottom: 10%;">
+                    <div class="step-number">18</div>
+                    <div class="title">Acknowledge Names</div>
+                    <div class="description">GSC confirms receipt of interpreter list</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">Meeting Planner</span>
+                    </div>
+                </div>
+                
+                <!-- SERVICE DELIVERY -->
+                
+                <!-- Step 19: Service Start -->
+                <div class="activity-card scic-action" style="left: 2840px; top: 20%;">
+                    <div class="step-number">19</div>
+                    <div class="title">Begin Service</div>
+                    <div class="description">Interpreters arrive and begin sessions</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">Interpreters</span>
+                    </div>
+                </div>
+                
+                <!-- Step 20: Active Monitoring -->
+                <div class="activity-card joint-action" style="left: 2960px; bottom: 30%;">
+                    <div class="step-number">20</div>
+                    <div class="title">Monitor Sessions</div>
+                    <div class="description">Real-time quality and issue monitoring</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">GSC</span>
+                        <span class="actor-tag scic">SCIC</span>
+                    </div>
+                </div>
+                
+                <!-- Step 21: Daily Updates -->
+                <div class="activity-card gsc-action" style="left: 3080px; top:5%;">
+                    <div class="step-number">21</div>
+                    <div class="title">Daily Session Updates</div>
+                    <div class="description">Send updated info for next working day</div>
+                    <div class="timing">Daily 16:00</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">Meeting Planner</span>
+                    </div>
+                </div>
+                
+                <!-- Step 22: Daily Regime Updates -->
+                <div class="activity-card scic-action" style="left: 3080px; bottom: 8%;">
+                    <div class="step-number">22</div>
+                    <div class="title">Daily Regime Updates</div>
+                    <div class="description">Send updated provided regime for next working day</div>
+                    <div class="timing">Daily 17:00</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC</span>
+                    </div>
+                </div>
+                
+                <!-- CLOSURE PHASE -->
+                
+                <!-- Step 23: Service Report -->
+                <div class="activity-card scic-action" style="left: 3250px; top: 22%;">
+                    <div class="step-number">23</div>
+                    <div class="title">Service Report</div>
+                    <div class="description">Document services provided and any issues</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC Officer</span>
+                    </div>
+                </div>
+                
+                <!-- Step 24: Interpreter Updates -->
+                <div class="activity-card scic-action" style="left: 3350px; bottom: 25%;">
+                    <div class="step-number">24</div>
+                    <div class="title">Send Interpreter Updates</div>
+                    <div class="description">Post Week X interpreter updates and acknowledgments as needed</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC</span>
+                    </div>
+                </div>
+                
+                <!-- Step 25: Prepare Invoice -->
+                <div class="activity-card scic-action" style="left: 3450px; top: 35%;">
+                    <div class="step-number">25</div>
+                    <div class="title">Prepare Invoices</div>
+                    <div class="description">Calculate costs including any modifications</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC</span>
+                    </div>
+                </div>
+                
+                <!-- Step 26: Send Invoice -->
+                <div class="activity-card scic-action" style="left: 3550px; bottom: 10%;">
+                    <div class="step-number">26</div>
+                    <div class="title">Send Invoice</div>
+                    <div class="description">Transmit invoices to GSC for validation</div>
+                    <div class="actors">
+                        <span class="actor-tag scic">SCIC</span>
+                    </div>
+                </div>
+                
+                <!-- Step 27: Validate Invoice -->
+                <div class="activity-card gsc-action" style="left: 3650px; top: 10%;">
+                    <div class="step-number">27</div>
+                    <div class="title">Validate Invoice</div>
+                    <div class="description">GSC reviews and approves invoicing</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">Meeting Planner</span>
+                        <span class="actor-tag system">POMME</span>
+                    </div>
+                </div>
+                
+                <!-- Step 28: Payment Processing -->
+                <div class="activity-card gsc-action" style="left: 3750px; bottom: 30%;">
+                    <div class="step-number">28</div>
+                    <div class="title">Process Payment</div>
+                    <div class="description">Initiate payment for services</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">GSC Finance</span>
+                    </div>
+                </div>
+                
+                <!-- Step 29: Order Closure -->
+                <div class="activity-card joint-action" style="left: 3850px; top: 20%;">
+                    <div class="step-number">29</div>
+                    <div class="title">Close Orders</div>
+                    <div class="description">Final acknowledgments and archive records</div>
+                    <div class="actors">
+                        <span class="actor-tag gsc">GSC</span>
+                        <span class="actor-tag scic">SCIC</span>
+                        <span class="actor-tag system">Both Systems</span>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- Daily Operations Box -->
+        <div class="daily-operations">
+            <h3>Daily Operational Updates (During Week X)</h3>
+            <div class="daily-item">
+                <strong>16:00 Daily:</strong> GSC sends updated session information (room, building, time changes) for next working day
+            </div>
+            <div class="daily-item">
+                <strong>17:00 Daily:</strong> SCIC sends updated provided regime for all interpretation orders of next working day
+            </div>
+            <div class="daily-item">
+                <strong>Post Week X:</strong> SCIC sends interpreter updates and acknowledgments as needed
+            </div>
+        </div>
+
+        <!-- On-Request Languages Management Section -->
+        <div class="process-section">
+            <h2 class="section-title">On-Request Languages Management</h2>
+            <div class="info-box">
+                <h3>Process Overview</h3>
+                <p>Process initiated <strong>at least 8 weeks before PCY starts</strong>. PCY defines on-request language choices and estimated number of meetings for all Council Preparatory Bodies (CPBs) under on-request regime.</p>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>Actor</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><span class="actor-tag pcy">Presidency</span></td>
+                        <td>Send on-request choices</td>
+                        <td>Define priority languages for each CPB, validity period, and estimated number of meetings</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><span class="actor-tag scic">SCIC Officer</span></td>
+                        <td>Acknowledge choices</td>
+                        <td>Updates internal records in PEARL system</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td><span class="actor-tag gsc">Meeting Planner</span></td>
+                        <td>Adjust if needed</td>
+                        <td>When Member State requests modification</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td><span class="actor-tag scic">SCIC Officer</span></td>
+                        <td>Acknowledge updates</td>
+                        <td>Confirms receipt of changes</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- New Meeting Group Creation Section -->
+        <div class="process-section">
+            <h2 class="section-title">Creation of New Meeting Group</h2>
+            <div class="info-box">
+                <h3>Process Overview</h3>
+                <p>Separate workflow for creating new meeting groups with unique SCIC codes. Not part of the main timeline but essential for system setup.</p>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>Actor</th>
+                        <th>Action</th>
+                        <th>Required Information</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><span class="actor-tag gsc">Meeting Planner</span></td>
+                        <td>Send new meeting group to SCIC</td>
+                        <td>Title (EN/FR), active/passive languages, priority languages, unique SCIC code</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><span class="actor-tag scic">SCIC Officer</span></td>
+                        <td>Create meeting group in PEARL</td>
+                        <td>Updates meeting group database with all details</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-line" style="background: #1976d2;"></div>
+                <span>GSC Actions</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line" style="background: #c2185b;"></div>
+                <span>SCIC Actions</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line" style="background: #7b1fa2;"></div>
+                <span>Joint Actions</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line" style="background: #00b4d8;"></div>
+                <span>Presidency Actions</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e3f2fd;"></div>
+                <span>GSC Actor</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #fce4ec;"></div>
+                <span>SCIC Actor</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e0f7fa;"></div>
+                <span>PCY Actor</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f3e5f5;"></div>
+                <span>IT System</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ff4444;"></div>
+                <span>Critical Deadlines</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #f093fb, #f5576c);"></div>
+                <span>Service Week</span>
+            </div>
+        </div>
+        
+        <!-- Order Types Reference Table -->
+        <div style="margin-top: 40px; background: #fff; border-radius: 15px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            <h2 style="color: #667eea; margin-bottom: 20px; font-size: 1.8em;">Interpretation Order Types Reference</h2>
+            
+            <table style="width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                        <th style="padding: 15px; text-align: left; font-weight: 600; min-width: 200px;">Order Type</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">Purpose</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">Who Creates</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">Trigger</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">SCIC Role</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">Cost Impact</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">Key Rules / Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #f8f9ff;">
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            <strong style="color: #667eea;">New Interpretation Order</strong>
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            Request interpretation for a new session/meeting
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            Council (Meeting Planner via <span style="background: #f3e5f5; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">POMME</span>)
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            Planned (8-weeks cycle) or ad-hoc/urgent request
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            SCIC (<span style="background: #f3e5f5; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">PEARL</span>) checks feasibility → Accept / Reject / Expire. <strong>Rejection justification is OPTIONAL</strong>
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            None (normal order flow)
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            If urgent, Council sets deadline for SCIC reply. Accepted order requires SCIC to send <strong>Provided Regime</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: white;">
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            <strong style="color: #ff4444;">Cancellation Order (aka Cancellation request)</strong>
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            Cancel a session + interpretation teams
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            Council (<span style="background: #f3e5f5; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">POMME</span>)
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            Meeting/session no longer takes place
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            SCIC acknowledges receipt and updates status
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            <strong style="color: green;">Before SLA</strong> → no cost<br>
+                            <strong style="color: red;">After SLA</strong> → cancellation with cost
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            If delay is foreseen and justification accepted, cancellation may still be <strong>without cost</strong>
+                        </td>
+                    </tr>
+                    <tr style="background: #f8f9ff;">
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            <strong style="color: #764ba2;">Replacement Order (aka Reallocation of Standby Teams)</strong>
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            Reassign interpreters from cancelled session to another
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            Council (<span style="background: #f3e5f5; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">POMME</span>)
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            Session cancelled but interpreters can still be reused
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            SCIC checks <strong>compatibility</strong> (same day, time slot, number of interpreters)
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            Avoids cancellation costs if compatible
+                        </td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e0e0e0;">
+                            If leftover languages: <strong style="color: green;">before SLA</strong> → no cost, <strong style="color: red;">after SLA</strong> → with cost
+                        </td>
+                    </tr>
+                    <tr style="background: white;">
+                        <td style="padding: 15px;">
+                            <strong style="color: #f57c00;">Language Regime Change</strong>
+                        </td>
+                        <td style="padding: 15px;">
+                            Add/remove languages to accepted order
+                        </td>
+                        <td style="padding: 15px;">
+                            Council (<span style="background: #f3e5f5; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">POMME</span>)
+                        </td>
+                        <td style="padding: 15px;">
+                            Delegation needs change
+                        </td>
+                        <td style="padding: 15px;">
+                            SCIC checks feasibility of added languages
+                        </td>
+                        <td style="padding: 15px;">
+                            <strong>Add languages</strong> → penalty-free anytime<br>
+                            <strong style="color: green;">Remove before SLA</strong> → no cost<br>
+                            <strong style="color: red;">Remove after SLA</strong> → with cost
+                        </td>
+                        <td style="padding: 15px;">
+                            Updates existing order. All changes tracked against same order ID
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        // Enhanced interactivity
+        document.querySelectorAll('.activity-card').forEach(card => {
+            card.addEventListener('click', function() {
+                this.classList.toggle('selected');
+            });
+            
+            card.addEventListener('mouseenter', function() {
+                const stepNum = this.querySelector('.step-number');
+                if (stepNum && !stepNum.textContent.includes('PCY')) {
+                    const currentStep = parseInt(stepNum.textContent);
+                    document.querySelectorAll('.step-number').forEach(num => {
+                        if (!num.textContent.includes('PCY')) {
+                            const step = parseInt(num.textContent);
+                            if (step === currentStep - 1 || step === currentStep + 1) {
+                                num.parentElement.style.opacity = '0.7';
+                            }
+                        }
+                    });
+                }
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                document.querySelectorAll('.activity-card').forEach(c => {
+                    if (!c.classList.contains('selected')) {
+                        c.style.opacity = '1';
+                    }
+                });
+            });
+        });
+        
+        // Smooth scroll for timeline
+        const timelineContainer = document.querySelector('.timeline-container');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        
+        timelineContainer.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - timelineContainer.offsetLeft;
+            scrollLeft = timelineContainer.scrollLeft;
+            timelineContainer.style.cursor = 'grabbing';
+        });
+        
+        timelineContainer.addEventListener('mouseleave', () => {
+            isDown = false;
+            timelineContainer.style.cursor = 'grab';
+        });
+        
+        timelineContainer.addEventListener('mouseup', () => {
+            isDown = false;
+            timelineContainer.style.cursor = 'grab';
+        });
+        
+        timelineContainer.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - timelineContainer.offsetLeft;
+            const walk = (x - startX) * 2;
+            timelineContainer.scrollLeft = scrollLeft - walk;
+        });
+        
+        timelineContainer.style.cursor = 'grab';
+    </script>
+</body>
+</html>
